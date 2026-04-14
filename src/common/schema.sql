@@ -1,0 +1,20 @@
+ CREATE TABLE users (
+     id SERIAL PRIMARY KEY,
+     username VARCHAR(100) NOT NULL,
+     email VARCHAR(255) UNIQUE NOT NULL,
+     password TEXT NOT NULL,
+
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ );
+
+ CREATE TABLE refresh_tokens (
+    id SERIAL PRIMARY KEY,
+
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+
+    token TEXT NOT NULL, -- store hashed token
+    expires_at TIMESTAMP NOT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
