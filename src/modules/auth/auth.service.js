@@ -25,11 +25,8 @@ const generateRefreshToken = (userId) => {
 };
 
 
-
-// register service
 const register = async ({ username, email, password }) => {
     try {
-        // 2. check existing user
         const existingUser = await pool.query(
             "SELECT id FROM users WHERE email = $1",
             [email]
@@ -62,57 +59,57 @@ const register = async ({ username, email, password }) => {
 };
 
 const login = async ({ email, password }) => {
-    try {
-        // 1. validation
-        if (!email || !password) {
-            throw new Error("Email and password required");
-        }
+    email = email.toLowerCase().trim();
 
-        // 2. find user
-        const result = await pool.query(
-            "SELECT * FROM users WHERE email = $1",
-            [email]
-        );
+    const result = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [email]
+    );
 
-        if (result.rows.length === 0) {
-            throw new Error("Invalid credentials");
-        }
-
-        const user = result.rows[0];
-
-        // 3. compare password
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            throw new Error("Invalid credentials");
-        }
-
-        // 4. generate tokens
-        const accessToken = generateAccessToken(user.id);
-        const refreshToken = generateRefreshToken(user.id);
-
-        // 5. store refresh token (hashed)
-        const hashedToken = hashToken(refreshToken);
-
-        await pool.query(
-            `INSERT INTO refresh_tokens (user_id, token, expires_at)
-             VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
-            [user.id, hashedToken]
-        );
-
-        return {
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email
-            },
-            accessToken,
-            refreshToken
-        };
-
-    } catch (error) {
-        throw error;
+    if (result.rows.length === 0) {
+        throw new Error("Invalid credentials");
     }
+
+    const user = result.rows[0];
+
+    // 3. compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+        throw new Error("Invalid credentials");
+    }
+
+    // 4. generate tokens
+    const accessToken = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: "7d" }
+    );
+
+    // 5. store refresh token (hashed)
+    const hashedToken = hashToken(refreshToken);
+
+    await pool.query(
+        `INSERT INTO refresh_tokens (user_id, token, expires_at)
+         VALUES ($1, $2, NOW() + INTERVAL '7 days')`,
+        [user.id, hashedToken]
+    );
+
+    return {
+        user: {
+            id: user.id,
+            username: user.username,
+            email: user.email
+        },
+        accessToken,
+        refreshToken
+    };
 };
 
 export { register, login };

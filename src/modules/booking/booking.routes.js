@@ -46,3 +46,15 @@ app.put("/:id/:name", async (req, res) => {
     res.send(500);
   }
 });
+
+
+// starts from here for booking module
+import express from "express";
+import BookingController from "./booking.controller.js";
+import authenticate from "../../common/middleware/auth.middleware.js";
+
+const router = express.Router();
+
+router.post("/", authenticate, BookingController.createBooking);
+
+export default router;
