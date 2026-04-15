@@ -19,6 +19,10 @@ class BookingController {
             ApiResponse.error(res, error.message);
         }
     }
+    async getBookings(req, res) {
+        const result = await pool.query("select * from seats"); // equivalent to Seats.find() in mongoose
+        res.send(result.rows);
+    }
 }
 
 export default new BookingController();

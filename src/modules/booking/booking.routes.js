@@ -56,5 +56,6 @@ import authenticate from "../../common/middleware/auth.middleware.js";
 const router = express.Router();
 
 router.post("/", authenticate, BookingController.createBooking);
+router.get("/seats", authenticate, BookingController.getBookings);
 
 export default router;
